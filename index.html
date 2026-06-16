@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meden Rudnik Control Center</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+:root{
+    --bg:#040912;
+    --card:#0b1525;
+    --accent:#00d4ff;
+    --text:#eaf6ff;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:Arial, sans-serif;
+    height:100vh;
+    overflow:hidden;
+}
+
+.container{
+    height:100vh;
+    display:grid;
+    grid-template-rows:70px 1fr;
+    gap:10px;
+    padding:10px;
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border:1px solid var(--accent);
+    border-radius:15px;
+    padding:0 20px;
+    background:rgba(0,212,255,.05);
+}
+
+.clock{
+    font-size:2rem;
+    font-weight:bold;
+}
+
+.title{
+    text-align:center;
+}
+
+.title h1{
+    color:var(--accent);
+    font-size:1.5rem;
+}
+
+.dashboard{
+    display:grid;
+    grid-template-columns:220px 1fr 220px;
+    gap:10px;
+}
+
+.panel{
+    background:var(--card);
+    border:1px solid rgba(0,212,255,.4);
+    border-radius:15px;
+    padding:15px;
+}
+
+.panel h2{
+    color:var(--accent);
+    margin-bottom:15px;
+}
+
+.weatherTemp{
+    font-size:3rem;
+    font-weight:bold;
+}
+
+.info{
+    margin-top:10px;
+}
+
+.info div{
+    margin:6px 0;
+}
+
+#map{
+    width:100%;
+    height:100%;
+    border-radius:10px;
+}
+
+.footer{
+    position:absolute;
+    bottom:5px;
+    left:0;
+    right:0;
+    text-align:center;
+    color:#888;
+    font-size:.8rem;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+    <div class="clock" id="clock">00:00:00</div>
+
+    <div class="title">
+        <h1>MEDEN RUDNIK CONTROL CENTER</h1>
+        <div id="date"></div>
+    </div>
+
+    <div id="status">ONLINE</div>
+</div>
+
+<div class="dashboard">
+
+<div class="panel">
+    <h2>Weather</h2>
+
+    <div class="weatherTemp" id="temp">--°</div>
+
+    <div class="info">
+        <div>Wind: <span id="wind">--</span> km/h</div>
+        <div>Humidity: <span id="humidity">--</span>%</div>
+    </div>
+</div>
+
+<div class="panel">
+    <div id="map"></div>
+</div>
+
+<div class="panel">
+    <h2>Astronomy</h2>
+
+    <div class="info">
+        <div>Sunrise: 05:32</div>
+        <div>Sunset: 20:48</div>
+        <div>Location:</div>
+        <div>Meden Rudnik</div>
+        <div>Burgas, Bulgaria</div>
+    </div>
+</div>
+
+</div>
+
+</div>
+
+<div class="footer">
+Raspberry Pi Dashboard
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+function updateClock(){
+    const now = new Date();
+
+    document.getElementById('clock').innerText =
+        now.toLocaleTimeString('en-GB');
+
+    document.getElementById('date').innerText =
+        now.toLocaleDateString('en-GB',{
+            weekday:'long',
+            year:'numeric',
+            month:'long',
+            day:'numeric'
+        });
+}
+
+setInterval(updateClock,1000);
+updateClock();
+
+const map = L.map('map',{
+    zoomControl:false
+}).setView([42.445,27.405],13);
+
+L.tileLayer(
+'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+{
+    maxZoom:19
+}).addTo(map);
+
+L.marker([42.445,27.405])
+.addTo(map)
+.bindPopup("Meden Rudnik");
+
+async function loadWeather(){
+
+    const url =
+'https://api.open-meteo.com/v1/forecast?latitude=42.445&longitude=27.405&current=temperature_2m,relative_humidity_2m,wind_speed_10m';
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    document.getElementById('temp').innerText =
+        Math.round(data.current.temperature_2m) + "°";
+
+    document.getElementById('wind').innerText =
+        Math.round(data.current.wind_speed_10m);
+
+    document.getElementById('humidity').innerText =
+        data.current.relative_humidity_2m;
+}
+
+loadWeather();
+setInterval(loadWeather,300000);
+</script>
+
+</body>
+</html>
